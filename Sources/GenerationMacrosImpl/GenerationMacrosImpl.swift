@@ -765,8 +765,8 @@ public struct GenerableMacro: MemberMacro, ExtensionMacro {
                     let properties = try generatedContent.properties()
                     
                     guard let caseValue = properties["case"]?.text else {
-                        throw GenerationError.decodingFailure(
-                            GenerationError.Context(debugDescription: "Missing 'case' property in enum data for \(enumName)")
+                        throw DecodingError.dataCorrupted(
+                            DecodingError.Context(codingPath: [], debugDescription: "Missing 'case' property in enum data for \(enumName)")
                         )
                     }
                     
@@ -775,8 +775,8 @@ public struct GenerableMacro: MemberMacro, ExtensionMacro {
                     switch caseValue {
                     \(switchCases)
                     default:
-                        throw GenerationError.decodingFailure(
-                            GenerationError.Context(debugDescription: "Invalid enum case '\\(caseValue)' for \(enumName). Valid cases: [\(cases.map { $0.name }.joined(separator: ", "))]")
+                        throw DecodingError.dataCorrupted(
+                            DecodingError.Context(codingPath: [], debugDescription: "Invalid enum case '\\(caseValue)' for \(enumName). Valid cases: [\(cases.map { $0.name }.joined(separator: ", "))]")
                         )
                     }
                 } catch {
@@ -784,8 +784,8 @@ public struct GenerableMacro: MemberMacro, ExtensionMacro {
                     switch value {
                     \(cases.filter { !$0.hasAssociatedValues }.map { "case \"\($0.name)\": self = .\($0.name)" }.joined(separator: "\n                    "))
                     default:
-                        throw GenerationError.decodingFailure(
-                            GenerationError.Context(debugDescription: "Invalid enum case '\\(value)' for \(enumName). Valid cases: [\(cases.map { $0.name }.joined(separator: ", "))]")
+                        throw DecodingError.dataCorrupted(
+                            DecodingError.Context(codingPath: [], debugDescription: "Invalid enum case '\\(value)' for \(enumName). Valid cases: [\(cases.map { $0.name }.joined(separator: ", "))]")
                         )
                     }
                 }
@@ -803,8 +803,8 @@ public struct GenerableMacro: MemberMacro, ExtensionMacro {
                 switch value {
                 \(switchCases)
                 default:
-                    throw GenerationError.decodingFailure(
-                        GenerationError.Context(debugDescription: "Invalid enum case '\\(value)' for \(enumName). Valid cases: [\(cases.map { $0.name }.joined(separator: ", "))]")
+                    throw DecodingError.dataCorrupted(
+                        DecodingError.Context(codingPath: [], debugDescription: "Invalid enum case '\\(value)' for \(enumName). Valid cases: [\(cases.map { $0.name }.joined(separator: ", "))]")
                     )
                 }
             }
@@ -861,8 +861,8 @@ public struct GenerableMacro: MemberMacro, ExtensionMacro {
                     let associatedValue = try \(valueType)(valueContent)
                     self = .\(caseName)(associatedValue)
                 } else {
-                    throw GenerationError.decodingFailure(
-                        GenerationError.Context(debugDescription: "Missing value for enum case '\(caseName)' with associated type \(valueType)")
+                    throw DecodingError.dataCorrupted(
+                        DecodingError.Context(codingPath: [], debugDescription: "Missing value for enum case '\(caseName)' with associated type \(valueType)")
                     )
                 }
             """
@@ -904,8 +904,8 @@ public struct GenerableMacro: MemberMacro, ExtensionMacro {
                 \(valueExtractions)
                 self = .\(caseName)(\(parameterList))
             } else {
-                throw GenerationError.decodingFailure(
-                    GenerationError.Context(debugDescription: "Missing value data for enum case '\(caseName)' with associated values")
+                throw DecodingError.dataCorrupted(
+                    DecodingError.Context(codingPath: [], debugDescription: "Missing value data for enum case '\(caseName)' with associated values")
                 )
             }
         """
