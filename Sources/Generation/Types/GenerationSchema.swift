@@ -348,7 +348,7 @@ public struct GenerationGuide<Value> {
     }
     
     // Internal method to support schema generation
-    internal func applyToSchema(_ schema: inout [String: Any]) {
+    internal func applyToSchema(_ schema: inout [String: any Sendable]) {
         switch storage {
         case .string(let stringStorage):
             switch stringStorage {
@@ -551,15 +551,15 @@ extension GenerationGuide where Value == Double {
 
 // Type-erased wrapper for GenerationGuide
 internal struct AnyGenerationGuide: @unchecked Sendable, Equatable {
-    private let applyToSchemaImpl: (inout [String: Any]) -> Void
-    
+    private let applyToSchemaImpl: (inout [String: any Sendable]) -> Void
+
     internal init<T>(_ guide: GenerationGuide<T>) {
         self.applyToSchemaImpl = { schema in
             guide.applyToSchema(&schema)
         }
     }
     
-    internal func applyToSchema(_ schema: inout [String: Any]) {
+    internal func applyToSchema(_ schema: inout [String: any Sendable]) {
         applyToSchemaImpl(&schema)
     }
     
@@ -621,8 +621,8 @@ extension GenerationSchema.SchemaType {
         }
     }
     
-    func toJSONSchema(description: String? = nil) -> [String: Any] {
-        var result: [String: Any] = [:]
+    func toJSONSchema(description: String? = nil) -> [String: any Sendable] {
+        var result: [String: any Sendable] = [:]
         
         if let description = description {
             result["description"] = description
@@ -632,11 +632,11 @@ extension GenerationSchema.SchemaType {
         case .object(let properties):
             result["type"] = "object"
             if !properties.isEmpty {
-                var props: [String: Any] = [:]
+                var props: [String: any Sendable] = [:]
                 var required: [String] = []
                 
                 for property in properties {
-                    var propSchema = property.type.toJSONSchema(description: property.description)
+                    var propSchema: [String: any Sendable] = property.type.toJSONSchema(description: property.description)
                     // Remove description from nested schema if it was added at property level
                     if property.description != nil {
                         propSchema.removeValue(forKey: "description")
@@ -705,7 +705,7 @@ extension GenerationSchema.SchemaType {
                    type == String.self,
                    guides.count == 1 {
                     // Try to extract constant value
-                    var tempSchema: [String: Any] = [:]
+                    var tempSchema: [String: any Sendable] = [:]
                     guides[0].applyToSchema(&tempSchema)
                     if let constValue = tempSchema["const"] as? String {
                         enumValues.append(constValue)
