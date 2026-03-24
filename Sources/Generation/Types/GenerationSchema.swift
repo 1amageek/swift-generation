@@ -210,6 +210,33 @@ public struct GenerationSchema: Sendable, SendableMetatype, Codable, CustomDebug
         self._typeName = String(describing: type)
     }
 
+    public init(
+        type: any Generable.Type,
+        description: String? = nil,
+        representNilExplicitlyInGeneratedContent: Bool,
+        properties: [GenerationSchema.Property]
+    ) {
+        // Same logic as init(type:description:properties:)
+        if properties.isEmpty {
+            self.schemaType = .generic(type: type, guides: [])
+        } else {
+            let propInfos = properties.map { prop in
+                let propertySchemaType: SchemaType = prop.type.generationSchema.schemaType
+                return PropertyInfo(
+                    name: prop.name,
+                    description: prop.description,
+                    type: propertySchemaType,
+                    isOptional: SchemaType.isOptionalType(prop.type),
+                    guides: prop.guides,
+                    regexPatterns: prop.regexPatterns
+                )
+            }
+            self.schemaType = .object(properties: propInfos)
+        }
+        self._description = description
+        self._typeName = String(describing: type)
+    }
+
     public init(type: any Generable.Type, description: String? = nil, anyOf types: [any Generable.Type]) {
         // For union types, create schemas for each type
         let schemas = types.map { genType in
@@ -270,7 +297,7 @@ public struct GenerationSchema: Sendable, SendableMetatype, Codable, CustomDebug
         }
     }
     
-    @_spi(Internal) public func toSchemaDictionary(asRootSchema: Bool = false) -> [String: Any] {
+    @_spi(Internal) public func toSchemaDictionary(asRootSchema: Bool = false) -> [String: any Sendable] {
         var schema = schemaType.toJSONSchema(description: _description)
         
         // Add $schema field for root schemas

@@ -6,6 +6,13 @@ import Generation
 @attached(member, names: arbitrary)
 public macro Generable(description: String? = nil) = #externalMacro(module: "GenerationMacrosImpl", type: "GenerableMacro")
 
+@attached(extension, conformances: Generable, names: named(init(_:)), named(generatedContent))
+@attached(member, names: arbitrary)
+public macro Generable(
+    description: String? = nil,
+    representNilExplicitlyInGeneratedContent: Bool
+) = #externalMacro(module: "GenerationMacrosImpl", type: "GenerableMacro")
+
 // MARK: - @Guide Macros
 // Allows for influencing the allowed values of properties of a generable type
 

@@ -5,10 +5,12 @@ import Foundation
 public struct DynamicGenerationSchema: Sendable, SendableMetatype {
     
     internal let name: String
-    
+
     internal let description: String?
-    
+
     internal let schemaType: SchemaType
+
+    internal let representNilExplicitlyInGeneratedContent: Bool
     
     // MARK: - Nested Types
     
@@ -24,6 +26,7 @@ public struct DynamicGenerationSchema: Sendable, SendableMetatype {
         self.name = name
         self.description = description
         self.schemaType = .object(properties: properties)
+        self.representNilExplicitlyInGeneratedContent = false
     }
     
     public init(arrayOf itemSchema: DynamicGenerationSchema, minimumElements: Int? = nil, maximumElements: Int? = nil) {
@@ -34,24 +37,27 @@ public struct DynamicGenerationSchema: Sendable, SendableMetatype {
             minItems: minimumElements,
             maxItems: maximumElements
         )
+        self.representNilExplicitlyInGeneratedContent = false
     }
     
     public init(referenceTo name: String) {
         self.name = name
         self.description = nil
         self.schemaType = .reference(to: name)
+        self.representNilExplicitlyInGeneratedContent = false
     }
     
     public init(name: String, description: String? = nil, anyOf: [DynamicGenerationSchema]) {
         self.name = name
         self.description = description
         self.schemaType = .anyOf(anyOf)
+        self.representNilExplicitlyInGeneratedContent = false
     }
     
     public init(name: String, description: String? = nil, anyOf choices: [String]) {
         self.name = name
         self.description = description
-        
+
         // Create DynamicGenerationSchema for each choice
         let schemas = choices.map { value in
             DynamicGenerationSchema(
@@ -64,20 +70,44 @@ public struct DynamicGenerationSchema: Sendable, SendableMetatype {
             )
         }
         self.schemaType = .anyOf(schemas)
+        self.representNilExplicitlyInGeneratedContent = false
     }
-    
+
     public init<Value>(type: Value.Type, guides: [GenerationGuide<Value>] = []) where Value: Generable {
         self.name = String(describing: type)
         self.description = nil
         let anyGuides = guides.map { AnyGenerationGuide($0) }
         self.schemaType = .generic(type: type, guides: anyGuides)
+        self.representNilExplicitlyInGeneratedContent = false
     }
     
+    /// Creates an object schema that controls how nil properties are represented.
+    ///
+    /// When `representNilExplicitlyInGeneratedContent` is `true`, the model will produce
+    /// a property with a null value. When `false`, nil properties are omitted entirely.
+    public init(
+        name: String,
+        description: String? = nil,
+        representNilExplicitlyInGeneratedContent explicitNil: Bool,
+        properties: [DynamicGenerationSchema.Property]
+    ) {
+        self.name = name
+        self.description = description
+        self.schemaType = .object(properties: properties)
+        self.representNilExplicitlyInGeneratedContent = explicitNil
+    }
+
+    /// Creates a null schema.
+    public static var null: DynamicGenerationSchema {
+        DynamicGenerationSchema(name: "null", description: nil, schemaType: .generic(type: String.self, guides: []))
+    }
+
     // Internal init for creating resolved schemas
     internal init(name: String, description: String?, schemaType: SchemaType) {
         self.name = name
         self.description = description
         self.schemaType = schemaType
+        self.representNilExplicitlyInGeneratedContent = false
     }
     
     public struct Property: Sendable, SendableMetatype {

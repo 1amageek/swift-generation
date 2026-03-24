@@ -100,6 +100,19 @@ public struct GenerableMacro: MemberMacro, ExtensionMacro {
         }
         return stringLiteral.segments.description.trimmingCharacters(in: .init(charactersIn: "\""))
     }
+
+    private static func extractRepresentNilExplicitly(from node: AttributeSyntax) -> Bool {
+        guard let arguments = node.arguments?.as(LabeledExprListSyntax.self) else {
+            return false
+        }
+        for arg in arguments {
+            if arg.label?.text == "representNilExplicitlyInGeneratedContent",
+               let boolLiteral = arg.expression.as(BooleanLiteralExprSyntax.self) {
+                return boolLiteral.literal.text == "true"
+            }
+        }
+        return false
+    }
     
     private static func extractGuidedProperties(from structDecl: StructDeclSyntax) -> [PropertyInfo] {
         var properties: [PropertyInfo] = []
