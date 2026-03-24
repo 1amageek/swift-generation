@@ -17,7 +17,7 @@ internal enum SchemaCompatibility {
         _ type: T.Type,
         against saved: (root: DynamicGenerationSchema, dependencies: [DynamicGenerationSchema])
     ) throws {
-        let current = DynamicGenerationSchema(type: type)
+        let current = DynamicGenerationSchema(type: type, guides: [])
         
         var dependencyMap: [String: DynamicGenerationSchema] = [:]
         for dep in saved.dependencies {

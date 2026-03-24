@@ -48,10 +48,10 @@ public struct DynamicGenerationSchema: Sendable, SendableMetatype {
         self.representNilExplicitlyInGeneratedContent = false
     }
     
-    public init(name: String, description: String? = nil, anyOf: [DynamicGenerationSchema]) {
+    public init(name: String, description: String? = nil, anyOf choices: [DynamicGenerationSchema]) {
         self.name = name
         self.description = description
-        self.schemaType = .anyOf(anyOf)
+        self.schemaType = .anyOf(choices)
         self.representNilExplicitlyInGeneratedContent = false
     }
     
@@ -74,7 +74,7 @@ public struct DynamicGenerationSchema: Sendable, SendableMetatype {
         self.representNilExplicitlyInGeneratedContent = false
     }
 
-    public init<Value>(type: Value.Type, guides: [GenerationGuide<Value>] = []) where Value: Generable {
+    public init<Value>(type: Value.Type, guides: [GenerationGuide<Value>]) where Value: Generable {
         self.name = String(describing: type)
         self.description = nil
         let anyGuides = guides.map { AnyGenerationGuide($0) }
