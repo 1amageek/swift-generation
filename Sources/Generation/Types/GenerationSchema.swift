@@ -838,22 +838,6 @@ extension GenerationSchema {
             self.guides = []
         }
 
-        /// Create an optional property that contains a generable type.
-        ///
-        /// - Parameters:
-        ///   - name: The property's name.
-        ///   - description: A natural language description of what content
-        ///     should be generated for this property.
-        ///   - type: The type this property represents.
-        ///   - guides: A list of guides to apply to this property.
-        public init<Value>(name: String, description: String? = nil, type: Value?.Type, guides: [GenerationGuide<Value>] = []) where Value: Generable {
-            self.name = name
-            self.description = description
-            self.type = Optional<Value>.self
-            self.regexPatterns = []
-            self.guides = guides.map(AnyGenerationGuide.init)
-        }
-
         /// Create an optional property that contains a string type.
         ///
         /// - Parameters:

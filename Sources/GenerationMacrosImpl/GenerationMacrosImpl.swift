@@ -677,23 +677,11 @@ public struct GenerableMacro: MemberMacro, ExtensionMacro {
                 // Add guides from @Guide attribute (e.g., .minimum(0), .maximum(100))
                 guides.append(contentsOf: prop.guides)
 
-                // For Optional types, we need explicit type annotation on guides to disambiguate
-                // between init<Value>(type: Value.Type) and init<Value>(type: Value?.Type)
                 let guidesParam: String
                 if guides.isEmpty {
-                    if isOptional {
-                        // Explicit type annotation for disambiguation
-                        guidesParam = "[] as [GenerationGuide<\(baseType)>]"
-                    } else {
-                        guidesParam = "[]"
-                    }
+                    guidesParam = "[]"
                 } else {
-                    if isOptional {
-                        // Explicit type annotation for disambiguation with non-empty guides
-                        guidesParam = "[\(guides.joined(separator: ", "))] as [GenerationGuide<\(baseType)>]"
-                    } else {
-                        guidesParam = "[\(guides.joined(separator: ", "))]"
-                    }
+                    guidesParam = "[\(guides.joined(separator: ", "))]"
                 }
 
                 return """
