@@ -16,13 +16,14 @@ public struct GenerableMacro: MemberMacro, ExtensionMacro {
         if let structDecl = declaration.as(StructDeclSyntax.self) {
             let structName = structDecl.name.text
             let description = extractDescription(from: node)
-            
+            let explicitNil = extractRepresentNilExplicitly(from: node)
+
             let properties = extractGuidedProperties(from: structDecl)
 
             var members: [DeclSyntax] = [
                 generateRawContentProperty(),
                 generateInitFromGeneratedContent(structName: structName, properties: properties),
-                generateGeneratedContentProperty(structName: structName, description: description, properties: properties),
+                generateGeneratedContentProperty(structName: structName, description: description, properties: properties, representNilExplicitly: explicitNil),
                 generateGenerationSchemaProperty(structName: structName, description: description, properties: properties),
                 generatePartiallyGeneratedStruct(structName: structName, properties: properties),
                 generateAsPartiallyGeneratedMethod(structName: structName)
@@ -484,30 +485,21 @@ public struct GenerableMacro: MemberMacro, ExtensionMacro {
         }
     }
     
-    private static func generateGeneratedContentProperty(structName: String, description: String?, properties: [PropertyInfo]) -> DeclSyntax {
+    private static func generateGeneratedContentProperty(structName: String, description: String?, properties: [PropertyInfo], representNilExplicitly: Bool = false) -> DeclSyntax {
         let propertyConversions = properties.map { prop in
             let propName = prop.name
             let propType = prop.type
-            
+
             if propType.hasSuffix("?") {
                 let baseType = String(propType.dropLast()) // Remove "?"
-                if baseType == "String" {
-                    return "properties[\"\(propName)\"] = \(propName).map { GeneratedContent($0) } ?? GeneratedContent(kind: .null)"
-                } else if baseType == "Int" || baseType == "Double" || baseType == "Float" || baseType == "Bool" || baseType == "Decimal" {
-                    return "properties[\"\(propName)\"] = \(propName).map { $0.generatedContent } ?? GeneratedContent(kind: .null)"
-                } else if isDictionaryType(baseType) {
-                    // Handle optional dictionary types
-                    return "properties[\"\(propName)\"] = \(propName).map { $0.generatedContent } ?? GeneratedContent(kind: .null)"
-                } else if baseType.hasPrefix("[") && baseType.hasSuffix("]") {
-                    return "properties[\"\(propName)\"] = \(propName).map { GeneratedContent(elements: $0) } ?? GeneratedContent(kind: .null)"
+                if representNilExplicitly {
+                    // representNilExplicitlyInGeneratedContent: true
+                    // nil -> GeneratedContent(kind: .null)
+                    return generateOptionalConversion(propName: propName, baseType: baseType, nilBehavior: "properties[\"\(propName)\"] = GeneratedContent(kind: .null)")
                 } else {
-                    return """
-                    if let value = \(propName) {
-                                properties["\(propName)"] = value.generatedContent
-                            } else {
-                                properties["\(propName)"] = GeneratedContent(kind: .null)
-                            }
-                    """
+                    // representNilExplicitlyInGeneratedContent: false (default)
+                    // nil -> omit the property entirely
+                    return generateOptionalConversion(propName: propName, baseType: baseType, nilBehavior: "// omit nil")
                 }
             } else if isDictionaryType(propType) {
                 // Handle non-optional dictionary types
@@ -566,6 +558,50 @@ public struct GenerableMacro: MemberMacro, ExtensionMacro {
         }
     }
     
+    private static func generateOptionalConversion(propName: String, baseType: String, nilBehavior: String) -> String {
+        if baseType == "String" {
+            return """
+            if let value = \(propName) {
+                        properties["\(propName)"] = GeneratedContent(value)
+                    } else {
+                        \(nilBehavior)
+                    }
+            """
+        } else if baseType == "Int" || baseType == "Double" || baseType == "Float" || baseType == "Bool" || baseType == "Decimal" {
+            return """
+            if let value = \(propName) {
+                        properties["\(propName)"] = value.generatedContent
+                    } else {
+                        \(nilBehavior)
+                    }
+            """
+        } else if isDictionaryType(baseType) {
+            return """
+            if let value = \(propName) {
+                        properties["\(propName)"] = value.generatedContent
+                    } else {
+                        \(nilBehavior)
+                    }
+            """
+        } else if baseType.hasPrefix("[") && baseType.hasSuffix("]") {
+            return """
+            if let value = \(propName) {
+                        properties["\(propName)"] = GeneratedContent(elements: value)
+                    } else {
+                        \(nilBehavior)
+                    }
+            """
+        } else {
+            return """
+            if let value = \(propName) {
+                        properties["\(propName)"] = value.generatedContent
+                    } else {
+                        \(nilBehavior)
+                    }
+            """
+        }
+    }
+
     private static func generateFromGeneratedContentMethod(structName: String) -> DeclSyntax {
         return DeclSyntax(stringLiteral: """
         public static func from(generatedContent: GeneratedContent) throws -> \(structName) {

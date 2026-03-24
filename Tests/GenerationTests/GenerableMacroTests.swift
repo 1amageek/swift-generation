@@ -51,6 +51,18 @@ struct WithCustomInit {
     }
 }
 
+@Generable(representNilExplicitlyInGeneratedContent: true)
+struct ExplicitNilType {
+    var name: String
+    var nickname: String?
+}
+
+@Generable
+struct ImplicitNilType {
+    var name: String
+    var nickname: String?
+}
+
 @Suite("@Generable Macro")
 struct GenerableMacroTests {
 
@@ -219,6 +231,38 @@ struct GenerableMacroTests {
         #expect(partial.age == nil)
     }
 
+    // MARK: - representNilExplicitlyInGeneratedContent
+
+    @Test("representNilExplicitly: true includes null for nil properties")
+    func explicitNilIncludesNull() throws {
+        let obj = ExplicitNilType(name: "Alice", nickname: nil)
+        let content = obj.generatedContent
+        let props = try content.properties()
+        #expect(props["name"]?.text == "Alice")
+        #expect(props["nickname"] != nil, "nil property should be present as null")
+        #expect(props["nickname"]?.kind == .null)
+    }
+
+    @Test("representNilExplicitly: false (default) omits nil properties")
+    func implicitNilOmitsProperty() throws {
+        let obj = ImplicitNilType(name: "Bob", nickname: nil)
+        let content = obj.generatedContent
+        let props = try content.properties()
+        #expect(props["name"]?.text == "Bob")
+        #expect(props["nickname"] == nil, "nil property should be omitted")
+    }
+
+    @Test("representNilExplicitly: both preserve non-nil values")
+    func bothPreserveNonNil() throws {
+        let explicit = ExplicitNilType(name: "A", nickname: "B")
+        let explicitProps = try explicit.generatedContent.properties()
+        #expect(explicitProps["nickname"]?.text == "B")
+
+        let implicit = ImplicitNilType(name: "C", nickname: "D")
+        let implicitProps = try implicit.generatedContent.properties()
+        #expect(implicitProps["nickname"]?.text == "D")
+    }
+
     @Test("generationSchema exists for all macro types")
     func schemasExist() {
         _ = SimpleValue.generationSchema
@@ -228,6 +272,8 @@ struct GenerableMacroTests {
         _ = Color.generationSchema
         _ = WithGuide.generationSchema
         _ = WithCustomInit.generationSchema
+        _ = ExplicitNilType.generationSchema
+        _ = ImplicitNilType.generationSchema
         #expect(Bool(true))
     }
 }

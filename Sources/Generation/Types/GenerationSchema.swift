@@ -116,6 +116,10 @@ public struct GenerationSchema: Sendable, SendableMetatype, Codable, CustomDebug
         visitedRefs: Set<String> = []
     ) throws -> GenerationSchema.SchemaType {
         switch dynamicType {
+        case .null:
+            // Null schema resolves to a generic type representing null
+            return .generic(type: String.self, guides: [])
+
         case .object(let properties):
             // Resolve all properties
             let resolvedProps = try properties.map { prop in

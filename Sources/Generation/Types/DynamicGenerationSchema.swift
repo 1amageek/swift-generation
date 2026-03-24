@@ -15,6 +15,7 @@ public struct DynamicGenerationSchema: Sendable, SendableMetatype {
     // MARK: - Nested Types
     
     internal indirect enum SchemaType: Sendable {
+        case null
         case object(properties: [Property])
         case array(element: DynamicGenerationSchema, minItems: Int?, maxItems: Int?)
         case reference(to: String)
@@ -99,7 +100,7 @@ public struct DynamicGenerationSchema: Sendable, SendableMetatype {
 
     /// Creates a null schema.
     public static var null: DynamicGenerationSchema {
-        DynamicGenerationSchema(name: "null", description: nil, schemaType: .generic(type: String.self, guides: []))
+        DynamicGenerationSchema(name: "null", description: nil, schemaType: .null)
     }
 
     // Internal init for creating resolved schemas
