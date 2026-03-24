@@ -3,7 +3,7 @@ import Foundation
 // MARK: - Dictionary Generable Conformance
 
 extension Dictionary: Generable where Key == String, Value: Generable {
-    
+
     public static var generationSchema: GenerationSchema {
         // Create a dictionary schema with additionalProperties
         let valueSchema = Value.generationSchema.schemaType
@@ -20,13 +20,13 @@ extension Dictionary: ConvertibleToGeneratedContent where Key == String, Value: 
     public var generatedContent: GeneratedContent {
         var properties: [String: GeneratedContent] = [:]
         let orderedKeys = self.keys.sorted()
-        
+
         for key in orderedKeys {
             if let value = self[key] {
                 properties[key] = value.generatedContent
             }
         }
-        
+
         return GeneratedContent(kind: .structure(properties: properties, orderedKeys: orderedKeys))
     }
 }
@@ -53,7 +53,7 @@ extension Dictionary: ConvertibleFromGeneratedContent where Key == String, Value
                     )
                 )
             }
-            
+
             guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
                 throw DecodingError.dataCorrupted(
                     DecodingError.Context(
@@ -62,7 +62,7 @@ extension Dictionary: ConvertibleFromGeneratedContent where Key == String, Value
                     )
                 )
             }
-            
+
             var dict: [String: Value] = [:]
             for (key, value) in json {
                 let jsonData = try JSONSerialization.data(withJSONObject: value)
@@ -78,25 +78,5 @@ extension Dictionary: ConvertibleFromGeneratedContent where Key == String, Value
                 )
             )
         }
-    }
-}
-
-// MARK: - Dictionary InstructionsRepresentable
-
-extension Dictionary: InstructionsRepresentable where Key == String, Value: ConvertibleToGeneratedContent {
-    public var instructionsRepresentation: Instructions {
-        let jsonData = try? JSONSerialization.data(withJSONObject: self.mapValues { $0.generatedContent.text })
-        let jsonString = jsonData.flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
-        return Instructions(jsonString)
-    }
-}
-
-// MARK: - Dictionary PromptRepresentable
-
-extension Dictionary: PromptRepresentable where Key == String, Value: ConvertibleToGeneratedContent {
-    public var promptRepresentation: Prompt {
-        let jsonData = try? JSONSerialization.data(withJSONObject: self.mapValues { $0.generatedContent.text })
-        let jsonString = jsonData.flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
-        return Prompt(jsonString)
     }
 }
