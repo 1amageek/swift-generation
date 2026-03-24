@@ -65,9 +65,15 @@ extension Dictionary: ConvertibleFromGeneratedContent where Key == String, Value
 
             var dict: [String: Value] = [:]
             for (key, value) in json {
-                let jsonData = try JSONSerialization.data(withJSONObject: value)
-                let jsonString = String(data: jsonData, encoding: .utf8) ?? ""
-                dict[key] = try Value(GeneratedContent(json: jsonString))
+                if JSONSerialization.isValidJSONObject(value) {
+                    let jsonData = try JSONSerialization.data(withJSONObject: value)
+                    let jsonString = String(data: jsonData, encoding: .utf8) ?? ""
+                    dict[key] = try Value(GeneratedContent(json: jsonString))
+                } else {
+                    // Primitive values (String, Number, Bool) are not valid
+                    // top-level JSON objects; wrap them directly.
+                    dict[key] = try Value(GeneratedContent(kind: .string("\(value)")))
+                }
             }
             self = dict
         default:
