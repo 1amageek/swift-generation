@@ -28,6 +28,17 @@ public struct GenerableMacro: MemberMacro, ExtensionMacro {
                 generateAsPartiallyGeneratedMethod(structName: structName)
             ]
 
+            // Generate CodingKeys to exclude _rawGeneratedContent from Codable encoding.
+            // Skip if:
+            //   - The user already declared their own CodingKeys
+            //   - Another macro attribute is present that may also generate CodingKeys
+            //   - There are no properties (empty enum is invalid)
+            if !properties.isEmpty
+                && !hasCodingKeys(in: structDecl)
+                && !hasOtherMacroAttributes(on: structDecl) {
+                members.append(generateCodingKeys(properties: properties))
+            }
+
             // Generate memberwise init to compensate for the compiler no longer
             // synthesizing one (because the macro adds init(_ generatedContent:)).
             // Skip if the user already declared their own init.
@@ -267,24 +278,47 @@ public struct GenerableMacro: MemberMacro, ExtensionMacro {
         """)
     }
 
-    /// Generate a non-stored wrapper for raw GeneratedContent.
-    /// Uses a class-based box so it does NOT participate in Codable synthesis,
-    /// avoiding CodingKeys conflicts with other macros.
-    /// The box is Codable itself (encoding/decoding as nil) so it won't break
-    /// synthesized Codable conformance.
+    /// Check if the struct already declares a CodingKeys enum in source.
+    private static func hasCodingKeys(in structDecl: StructDeclSyntax) -> Bool {
+        structDecl.memberBlock.members.contains { member in
+            if let enumDecl = member.decl.as(EnumDeclSyntax.self) {
+                return enumDecl.name.text == "CodingKeys"
+            }
+            return false
+        }
+    }
+
+    /// Check if the struct has other macro attributes that may generate CodingKeys.
+    /// When another member macro is present (e.g. @Persistable), skip CodingKeys
+    /// generation to avoid duplicate declaration conflicts.
+    private static func hasOtherMacroAttributes(on structDecl: StructDeclSyntax) -> Bool {
+        let knownSafe = Set(["Generable", "Guide", "available", "frozen",
+                             "dynamicMemberLookup", "propertyWrapper", "resultBuilder",
+                             "MainActor", "Sendable", "unchecked"])
+        for attribute in structDecl.attributes {
+            guard let attr = attribute.as(AttributeSyntax.self) else { continue }
+            let name = attr.attributeName.trimmedDescription
+            if !knownSafe.contains(name) {
+                return true
+            }
+        }
+        return false
+    }
+
+    /// Generate a CodingKeys enum that includes only user-declared properties,
+    /// excluding the macro-injected `_rawGeneratedContent`.
+    private static func generateCodingKeys(properties: [PropertyInfo]) -> DeclSyntax {
+        let cases = properties.map { "case \($0.name)" }.joined(separator: "\n        ")
+        return DeclSyntax(stringLiteral: """
+        enum CodingKeys: String, CodingKey {
+            \(cases)
+        }
+        """)
+    }
+
     private static func generateRawContentProperty() -> DeclSyntax {
         return DeclSyntax(stringLiteral: """
-        private final class _RawContentBox: @unchecked Sendable, Codable {
-            var value: GeneratedContent?
-            init(_ value: GeneratedContent? = nil) { self.value = value }
-            init(from decoder: Decoder) throws { self.value = nil }
-            func encode(to encoder: Encoder) throws {}
-        }
-        private var _rawContentBox = _RawContentBox()
-        private var _rawGeneratedContent: GeneratedContent? {
-            get { _rawContentBox.value }
-            set { _rawContentBox.value = newValue }
-        }
+        private var _rawGeneratedContent: GeneratedContent? = nil
         """)
     }
 
@@ -297,17 +331,17 @@ public struct GenerableMacro: MemberMacro, ExtensionMacro {
         if properties.isEmpty {
             return DeclSyntax(stringLiteral: """
             public init(_ generatedContent: GeneratedContent) throws {
-                _ = try generatedContent.properties()  // Validate structure even if empty
                 self._rawGeneratedContent = generatedContent
+                _ = try generatedContent.properties()  // Validate structure even if empty
             }
             """)
         } else {
             return DeclSyntax(stringLiteral: """
             public init(_ generatedContent: GeneratedContent) throws {
+                self._rawGeneratedContent = generatedContent
                 let properties = try generatedContent.properties()
 
                 \(propertyExtractions)
-                self._rawGeneratedContent = generatedContent
             }
             """)
         }
