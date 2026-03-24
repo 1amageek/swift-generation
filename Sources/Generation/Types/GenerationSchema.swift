@@ -589,14 +589,12 @@ internal struct AnyGenerationGuide: @unchecked Sendable, Equatable {
             guide.applyToSchema(&schema)
         }
     }
-    
+
     internal func applyToSchema(_ schema: inout [String: any Sendable]) {
         applyToSchemaImpl(&schema)
     }
-    
+
     static func ==(lhs: AnyGenerationGuide, rhs: AnyGenerationGuide) -> Bool {
-        // Since we can't compare the actual guides, return true for simplicity
-        // This is only used for Equatable conformance
         return true
     }
 }
@@ -821,15 +819,6 @@ extension GenerationSchema {
         
         internal let guides: [AnyGenerationGuide]
         
-        public init<Value>(name: String, description: String? = nil, type: Value.Type, guides: [GenerationGuide<Value>] = []) where Value: Generable {
-            self.name = name
-            self.description = description
-            self.type = type
-            self.regexPatterns = []
-            self.guides = guides.map(AnyGenerationGuide.init)
-        }
-        
-        
         public init<RegexOutput>(name: String, description: String? = nil, type: String.Type, guides: [Regex<RegexOutput>] = []) {
             self.name = name
             self.description = description
@@ -838,21 +827,6 @@ extension GenerationSchema {
             self.guides = []
         }
 
-        /// Create an optional property that contains a string type.
-        ///
-        /// - Parameters:
-        ///   - name: The property's name.
-        ///   - description: A natural language description of what content
-        ///     should be generated for this property.
-        ///   - type: The type this property represents.
-        ///   - guides: An array of regexes to be applied to this string. If there're multiple regexes in the array, only the last one will be applied.
-        public init<RegexOutput>(name: String, description: String? = nil, type: String?.Type, guides: [Regex<RegexOutput>] = []) {
-            self.name = name
-            self.description = description
-            self.type = Optional<String>.self
-            self.regexPatterns = guides.map { String(describing: $0) }
-            self.guides = []
-        }
 
         internal init(
             name: String,

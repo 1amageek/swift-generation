@@ -619,99 +619,62 @@ public struct GenerableMacro: MemberMacro, ExtensionMacro {
     }
     
     private static func generateGenerationSchemaProperty(structName: String, description: String?, properties: [PropertyInfo]) -> DeclSyntax {
-        let propertyDefinitions = properties.map { prop in
-            let descriptionParam = prop.guideDescription.map { "description: \"\($0)\"" } ?? "description: nil"
+        let descriptionLiteral = description.map { "\"\($0)\"" } ?? "nil"
 
-            let typeParam: String
+        let propertyDefinitions = properties.map { prop in
             let isOptional = prop.type.hasSuffix("?")
             let baseType = isOptional ? String(prop.type.dropLast()) : prop.type
+            let descParam = prop.guideDescription.map { "\"\($0)\"" } ?? "nil"
 
-            switch prop.type {
-            case "String":
-                typeParam = "String.self"
-            case "String?":
-                typeParam = "String?.self"
-            case "Int":
-                typeParam = "Int.self"
-            case "Int?":
-                typeParam = "Int?.self"
-            case "Double":
-                typeParam = "Double.self"
-            case "Double?":
-                typeParam = "Double?.self"
-            case "Float":
-                typeParam = "Float.self"
-            case "Float?":
-                typeParam = "Float?.self"
-            case "Bool":
-                typeParam = "Bool.self"
-            case "Bool?":
-                typeParam = "Bool?.self"
-            default:
-                if isOptional {
-                    typeParam = "\(prop.type).self"
-                } else {
-                    typeParam = "\(prop.type).self"
-                }
-            }
-
-            // Check if this is a String type with regex pattern
-            let isStringType = baseType == "String"
-            let hasPattern = prop.pattern != nil
-
-            if isStringType && hasPattern {
-                // Use regex-based initializer for String/String? with pattern
-                let regexParam = "try! Regex(\"\(prop.pattern!)\")"
-                return """
-                    GenerationSchema.Property(
-                        name: "\(prop.name)",
-                        \(descriptionParam),
-                        type: \(typeParam),
-                        guides: [\(regexParam)]
-                    )
-                """
+            // Build the inner schema for this property using DynamicGenerationSchema
+            let schemaExpr: String
+            if let pattern = prop.pattern, baseType == "String" {
+                schemaExpr = "DynamicGenerationSchema(type: String.self, guides: [.pattern(try! Regex(\"\(pattern)\"))])"
+            } else if !prop.guides.isEmpty {
+                let guidesStr = prop.guides.joined(separator: ", ")
+                schemaExpr = "DynamicGenerationSchema(type: \(baseType).self, guides: [\(guidesStr)])"
             } else {
-                // Use GenerationGuide-based initializer
-                var guides: [String] = []
-
-                // Add guides from @Guide attribute (e.g., .minimum(0), .maximum(100))
-                guides.append(contentsOf: prop.guides)
-
-                let guidesParam: String
-                if guides.isEmpty {
-                    guidesParam = "[]"
-                } else {
-                    guidesParam = "[\(guides.joined(separator: ", "))]"
-                }
-
-                return """
-                    GenerationSchema.Property(
-                        name: "\(prop.name)",
-                        \(descriptionParam),
-                        type: \(typeParam),
-                        guides: \(guidesParam)
-                    )
-                """
+                schemaExpr = "DynamicGenerationSchema(type: \(baseType).self, guides: [])"
             }
+
+            return """
+                DynamicGenerationSchema.Property(
+                    name: "\(prop.name)",
+                    description: \(descParam),
+                    schema: \(schemaExpr),
+                    isOptional: \(isOptional)
+                )
+            """
         }
-        
-        let propertiesArray = propertyDefinitions.isEmpty ? "[]" : """
-[
-                \(propertyDefinitions.joined(separator: ",\n                "))
-            ]
-"""
-        
-        return DeclSyntax(stringLiteral: """
-        public static var generationSchema: GenerationSchema {
-            return GenerationSchema(
-                type: \(structName).self,
-                description: \(description.map { "\"\($0)\"" } ?? "\"Generated \(structName)\""),
-                properties: \(propertiesArray)
-            )
+
+        if properties.isEmpty {
+            return DeclSyntax(stringLiteral: """
+            public static var generationSchema: GenerationSchema {
+                return try! GenerationSchema(
+                    root: DynamicGenerationSchema(name: "\(structName)", description: \(descriptionLiteral), properties: []),
+                    dependencies: []
+                )
+            }
+            """)
+        } else {
+            let propsArray = propertyDefinitions.joined(separator: ",\n                ")
+            return DeclSyntax(stringLiteral: """
+            public static var generationSchema: GenerationSchema {
+                return try! GenerationSchema(
+                    root: DynamicGenerationSchema(
+                        name: "\(structName)",
+                        description: \(descriptionLiteral),
+                        properties: [
+                            \(propsArray)
+                        ]
+                    ),
+                    dependencies: []
+                )
+            }
+            """)
         }
-        """)
     }
-    
+
     private static func generateAsPartiallyGeneratedMethod(structName: String) -> DeclSyntax {
         return DeclSyntax(stringLiteral: """
         public func asPartiallyGenerated() -> PartiallyGenerated {
@@ -1076,49 +1039,40 @@ public struct GenerableMacro: MemberMacro, ExtensionMacro {
     }
     
     private static func generateEnumGenerationSchemaProperty(enumName: String, description: String?, cases: [EnumCaseInfo]) -> DeclSyntax {
+        let descriptionLiteral = description.map { "\"\($0)\"" } ?? "nil"
         let hasAnyAssociatedValues = cases.contains { $0.hasAssociatedValues }
-        
+
         if hasAnyAssociatedValues {
-            
-            let caseProperty = """
-GenerationSchema.Property(
-                        name: "case",
-                        description: "Enum case identifier",
-                        type: String.self,
-                        guides: []
-                    )
-"""
-            let valueProperty = """
-GenerationSchema.Property(
-                        name: "value",
-                        description: "Associated value data",
-                        type: String.self,
-                        guides: []
-                    )
-"""
-            
             return DeclSyntax(stringLiteral: """
             public static var generationSchema: GenerationSchema {
-                
-                return GenerationSchema(
-                    type: Self.self,
-                    description: \(description.map { "\"\($0)\"" } ?? "\"Generated \(enumName)\""),
-                    properties: [
-                        \(caseProperty),
-                        \(valueProperty)
-                    ]
+                return try! GenerationSchema(
+                    root: DynamicGenerationSchema(
+                        name: "\(enumName)",
+                        description: \(descriptionLiteral),
+                        properties: [
+                            DynamicGenerationSchema.Property(
+                                name: "case",
+                                description: "Enum case identifier",
+                                schema: DynamicGenerationSchema(type: String.self, guides: [])
+                            ),
+                            DynamicGenerationSchema.Property(
+                                name: "value",
+                                description: "Associated value data",
+                                schema: DynamicGenerationSchema(type: String.self, guides: [])
+                            )
+                        ]
+                    ),
+                    dependencies: []
                 )
             }
             """)
         } else {
             let caseNames = cases.map { "\"\($0.name)\"" }.joined(separator: ", ")
-            
             return DeclSyntax(stringLiteral: """
             public static var generationSchema: GenerationSchema {
-                
                 return GenerationSchema(
                     type: Self.self,
-                    description: \(description.map { "\"\($0)\"" } ?? "\"Generated \(enumName)\""),
+                    description: \(descriptionLiteral) ?? "Generated \(enumName)",
                     anyOf: [\(caseNames)]
                 )
             }

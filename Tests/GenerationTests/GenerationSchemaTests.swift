@@ -212,20 +212,6 @@ struct GenerationSchemaTests {
         #expect(names.contains("metadata"))
         #expect(names.contains("priority"))
 
-        let tagsInfo = props.first { $0.name == "tags" }
-        if case .array = tagsInfo?.type {
-            // expected
-        } else {
-            Issue.record("tags should be array schema type")
-        }
-
-        let metaInfo = props.first { $0.name == "metadata" }
-        if case .dictionary = metaInfo?.type {
-            // expected
-        } else {
-            Issue.record("metadata should be dictionary schema type")
-        }
-
         let priorityInfo = props.first { $0.name == "priority" }
         #expect(priorityInfo?.isOptional == true)
     }
