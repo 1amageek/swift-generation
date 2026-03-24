@@ -184,11 +184,39 @@ struct GenerableMacroTests {
         #expect(roundTrip.label == "A")
     }
 
-    @Test("PartiallyGenerated type exists")
-    func partiallyGeneratedType() {
-        // Verify the macro generates the PartiallyGenerated associated type
-        let _: Person.PartiallyGenerated.Type = Person.PartiallyGenerated.self
-        #expect(Bool(true))
+    @Test("PartiallyGenerated from complete content has all fields")
+    func partiallyGeneratedComplete() throws {
+        let json = try GeneratedContent(json: "{\"name\": \"Alice\", \"age\": 30}")
+        let person = try Person(json)
+        let partial = person.asPartiallyGenerated()
+        #expect(partial.name == "Alice")
+        #expect(partial.age == 30)
+    }
+
+    @Test("PartiallyGenerated from partial content has nil for missing fields")
+    func partiallyGeneratedPartial() throws {
+        let json = try GeneratedContent(json: "{\"name\": \"Bob\"}")
+        let person = try Person(json)
+        let partial = person.asPartiallyGenerated()
+        #expect(partial.name == "Bob")
+        #expect(partial.age == nil)
+    }
+
+    @Test("PartiallyGenerated from empty content has all nil")
+    func partiallyGeneratedEmpty() throws {
+        let json = try GeneratedContent(json: "{}")
+        let person = try Person(json)
+        let partial = person.asPartiallyGenerated()
+        #expect(partial.name == nil)
+        #expect(partial.age == nil)
+    }
+
+    @Test("PartiallyGenerated init directly from GeneratedContent")
+    func partiallyGeneratedDirect() throws {
+        let json = try GeneratedContent(json: "{\"name\": \"Carol\"}")
+        let partial = try Person.PartiallyGenerated(json)
+        #expect(partial.name == "Carol")
+        #expect(partial.age == nil)
     }
 
     @Test("generationSchema exists for all macro types")
