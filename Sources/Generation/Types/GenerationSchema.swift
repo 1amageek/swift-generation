@@ -819,10 +819,34 @@ extension GenerationSchema {
         
         internal let guides: [AnyGenerationGuide]
         
+        public init<Value>(name: String, description: String? = nil, type: Value.Type, guides: [GenerationGuide<Value>] = []) where Value: Generable {
+            self.name = name
+            self.description = description
+            self.type = type
+            self.regexPatterns = []
+            self.guides = guides.map(AnyGenerationGuide.init)
+        }
+
+        public init<Value>(name: String, description: String? = nil, type: Value?.Type, guides: [GenerationGuide<Value>] = []) where Value: Generable {
+            self.name = name
+            self.description = description
+            self.type = Optional<Value>.self
+            self.regexPatterns = []
+            self.guides = guides.map(AnyGenerationGuide.init)
+        }
+
         public init<RegexOutput>(name: String, description: String? = nil, type: String.Type, guides: [Regex<RegexOutput>] = []) {
             self.name = name
             self.description = description
             self.type = type
+            self.regexPatterns = guides.map { String(describing: $0) }
+            self.guides = []
+        }
+
+        public init<RegexOutput>(name: String, description: String? = nil, type: String?.Type, guides: [Regex<RegexOutput>] = []) {
+            self.name = name
+            self.description = description
+            self.type = Optional<String>.self
             self.regexPatterns = guides.map { String(describing: $0) }
             self.guides = []
         }
