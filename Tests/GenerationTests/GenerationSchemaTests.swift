@@ -1,7 +1,6 @@
 import Testing
 import Foundation
 @_spi(Internal) @testable import Generation
-import GenerationMacros
 
 // MARK: - Test types for schema verification
 

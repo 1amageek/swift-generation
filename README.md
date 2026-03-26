@@ -8,7 +8,6 @@ Structured output generation for Swift. Define types that language models can ge
 
 ```swift
 import Generation
-import GenerationMacros
 
 @Generable(description: "A movie review")
 struct MovieReview {
@@ -52,17 +51,9 @@ Then add the targets to your module:
     name: "YourTarget",
     dependencies: [
         .product(name: "Generation", package: "swift-generation"),
-        .product(name: "GenerationMacros", package: "swift-generation"),
     ]
 )
 ```
-
-## Modules
-
-| Module | Description |
-|--------|-------------|
-| `Generation` | Core protocols (`Generable`, `ConvertibleFromGeneratedContent`, `ConvertibleToGeneratedContent`) and types (`GeneratedContent`, `GenerationSchema`, `GenerationGuide`) |
-| `GenerationMacros` | `@Generable` and `@Guide` macro declarations |
 
 ## Core Types
 

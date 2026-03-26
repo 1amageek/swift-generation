@@ -15,9 +15,6 @@ let package = Package(
         .library(
             name: "Generation",
             targets: ["Generation"]),
-        .library(
-            name: "GenerationMacros",
-            targets: ["GenerationMacros"]),
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "602.0.0"),
@@ -25,7 +22,9 @@ let package = Package(
     targets: [
         .target(
             name: "Generation",
-            dependencies: []
+            dependencies: [
+                "GenerationMacrosImpl",
+            ]
         ),
 
         .macro(
@@ -36,17 +35,9 @@ let package = Package(
             ]
         ),
 
-        .target(
-            name: "GenerationMacros",
-            dependencies: [
-                "GenerationMacrosImpl",
-                "Generation"
-            ]
-        ),
-
         .testTarget(
             name: "GenerationTests",
-            dependencies: ["Generation", "GenerationMacros"]
+            dependencies: ["Generation"]
         ),
     ]
 )

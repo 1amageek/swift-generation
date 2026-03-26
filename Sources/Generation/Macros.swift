@@ -1,5 +1,3 @@
-import Generation
-
 // MARK: - @Generable Macro
 // Conforms a type to Generable protocol
 @attached(extension, conformances: Generable, names: named(init(_:)), named(generatedContent))

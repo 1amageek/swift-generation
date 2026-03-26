@@ -1,7 +1,6 @@
 import Testing
 import Foundation
 @testable import Generation
-import GenerationMacros
 
 @Generable
 struct SimpleValue {
