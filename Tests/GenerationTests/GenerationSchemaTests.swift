@@ -28,6 +28,13 @@ struct SchemaTestNested {
     var priority: SchemaTestPriority?
 }
 
+@Generable
+struct SchemaTestContainer {
+    var profile: SchemaTestProfile?
+    var tags: [String]?
+    var metadata: [String: Int]?
+}
+
 @Suite("GenerationSchema")
 struct GenerationSchemaTests {
 
@@ -254,5 +261,47 @@ struct GenerationSchemaTests {
         let schema = SchemaTestProfile.generationSchema
         let dict = schema.toSchemaDictionary(asRootSchema: true)
         #expect(dict["$schema"] as? String == "https://json-schema.org/draft/2020-12/schema")
+    }
+
+    @Test("toSchemaDictionary preserves array item schemas for optional arrays")
+    func schemaDictionaryOptionalArray() throws {
+        let dict = SchemaTestContainer.generationSchema.toSchemaDictionary()
+        let properties = try #require(dict["properties"] as? [String: Any])
+        let tags = try #require(properties["tags"] as? [String: Any])
+        let type = try #require(tags["type"] as? [String])
+        let items = try #require(tags["items"] as? [String: Any])
+
+        #expect(Set(type) == Set(["array", "null"]))
+        #expect(items["type"] as? String == "string")
+    }
+
+    @Test("toSchemaDictionary preserves dictionary schemas for optional dictionaries")
+    func schemaDictionaryOptionalDictionary() throws {
+        let dict = SchemaTestContainer.generationSchema.toSchemaDictionary()
+        let properties = try #require(dict["properties"] as? [String: Any])
+        let metadata = try #require(properties["metadata"] as? [String: Any])
+        let type = try #require(metadata["type"] as? [String])
+        let additionalProperties = try #require(metadata["additionalProperties"] as? [String: Any])
+
+        #expect(Set(type) == Set(["object", "null"]))
+        #expect(additionalProperties["type"] as? String == "integer")
+    }
+
+    @Test("toSchemaDictionary preserves nested object properties for optional custom types")
+    func schemaDictionaryOptionalNestedObject() throws {
+        let dict = SchemaTestContainer.generationSchema.toSchemaDictionary()
+        let properties = try #require(dict["properties"] as? [String: Any])
+        let profile = try #require(properties["profile"] as? [String: Any])
+        let type = try #require(profile["type"] as? [String])
+        let nestedProperties = try #require(profile["properties"] as? [String: Any])
+        let required = try #require(profile["required"] as? [String])
+
+        #expect(Set(type) == Set(["object", "null"]))
+        #expect((nestedProperties["name"] as? [String: Any])?["type"] as? String == "string")
+        #expect((nestedProperties["age"] as? [String: Any])?["type"] as? String == "integer")
+        #expect((nestedProperties["active"] as? [String: Any])?["type"] as? String == "boolean")
+        #expect(required.contains("name"))
+        #expect(required.contains("age"))
+        #expect(required.contains("active"))
     }
 }

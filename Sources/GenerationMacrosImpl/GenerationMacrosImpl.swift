@@ -622,37 +622,16 @@ public struct GenerableMacro: MemberMacro, ExtensionMacro {
         let descriptionLiteral = description.map { "\"\($0)\"" } ?? "nil"
 
         let propertyDefinitions = properties.map { prop in
-            let isOptional = prop.type.hasSuffix("?")
-            let baseType = isOptional ? String(prop.type.dropLast()) : prop.type
-            let descParam = prop.guideDescription.map { "\"\($0)\"" } ?? "nil"
-
-            // Build the inner schema for this property using DynamicGenerationSchema
-            let schemaExpr: String
-            if let pattern = prop.pattern, baseType == "String" {
-                schemaExpr = "DynamicGenerationSchema(type: String.self, guides: [.pattern(try! Regex(\"\(pattern)\"))])"
-            } else if !prop.guides.isEmpty {
-                let guidesStr = prop.guides.joined(separator: ", ")
-                schemaExpr = "DynamicGenerationSchema(type: \(baseType).self, guides: [\(guidesStr)])"
-            } else {
-                schemaExpr = "DynamicGenerationSchema(type: \(baseType).self, guides: [])"
-            }
-
-            return """
-                DynamicGenerationSchema.Property(
-                    name: "\(prop.name)",
-                    description: \(descParam),
-                    schema: \(schemaExpr),
-                    isOptional: \(isOptional)
-                )
-            """
+            generateGenerationSchemaPropertyDefinition(for: prop)
         }
 
         if properties.isEmpty {
             return DeclSyntax(stringLiteral: """
             public static var generationSchema: GenerationSchema {
-                return try! GenerationSchema(
-                    root: DynamicGenerationSchema(name: "\(structName)", description: \(descriptionLiteral), properties: []),
-                    dependencies: []
+                return GenerationSchema(
+                    type: Self.self,
+                    description: \(descriptionLiteral),
+                    properties: []
                 )
             }
             """)
@@ -660,19 +639,55 @@ public struct GenerableMacro: MemberMacro, ExtensionMacro {
             let propsArray = propertyDefinitions.joined(separator: ",\n                ")
             return DeclSyntax(stringLiteral: """
             public static var generationSchema: GenerationSchema {
-                return try! GenerationSchema(
-                    root: DynamicGenerationSchema(
-                        name: "\(structName)",
-                        description: \(descriptionLiteral),
-                        properties: [
-                            \(propsArray)
-                        ]
-                    ),
-                    dependencies: []
+                return GenerationSchema(
+                    type: Self.self,
+                    description: \(descriptionLiteral),
+                    properties: [
+                        \(propsArray)
+                    ]
                 )
             }
             """)
         }
+    }
+
+    private static func generateGenerationSchemaPropertyDefinition(for prop: PropertyInfo) -> String {
+        let isOptional = prop.type.hasSuffix("?")
+        let baseType = isOptional ? String(prop.type.dropLast()) : prop.type
+        let descParam = prop.guideDescription.map { "\"\($0)\"" } ?? "nil"
+        let typeExpr = "\(prop.type).self"
+
+        if let pattern = prop.pattern, baseType == "String" {
+            return """
+                GenerationSchema.Property(
+                    name: "\(prop.name)",
+                    description: \(descParam),
+                    type: \(typeExpr),
+                    guides: [try! Regex("\(pattern)")]
+                )
+            """
+        }
+
+        if !prop.guides.isEmpty {
+            let guidesStr = prop.guides.joined(separator: ", ")
+            return """
+                GenerationSchema.Property(
+                    name: "\(prop.name)",
+                    description: \(descParam),
+                    type: \(typeExpr),
+                    guides: [\(guidesStr)]
+                )
+            """
+        }
+
+        return """
+            GenerationSchema.Property(
+                name: "\(prop.name)",
+                description: \(descParam),
+                type: \(typeExpr),
+                guides: [GenerationGuide<\(baseType)>]()
+            )
+        """
     }
 
     private static func generateAsPartiallyGeneratedMethod(structName: String) -> DeclSyntax {
