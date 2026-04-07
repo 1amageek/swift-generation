@@ -2,7 +2,7 @@
 import Foundation
 
 
-public struct DynamicGenerationSchema: Sendable, SendableMetatype {
+public struct DynamicGenerationSchema: Sendable {
     
     internal let name: String
 
@@ -111,7 +111,7 @@ public struct DynamicGenerationSchema: Sendable, SendableMetatype {
         self.representNilExplicitlyInGeneratedContent = false
     }
     
-    public struct Property: Sendable, SendableMetatype {
+    public struct Property: Sendable {
         internal let name: String
         
         internal let description: String?

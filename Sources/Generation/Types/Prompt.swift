@@ -1,6 +1,6 @@
 import Foundation
 
-public struct Prompt: Sendable, Copyable, SendableMetatype, PromptRepresentable {
+public struct Prompt: Sendable, PromptRepresentable {
 
     @_spi(Internal)
     public struct Text: Sendable, Equatable {

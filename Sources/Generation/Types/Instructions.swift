@@ -1,6 +1,6 @@
 import Foundation
 
-public struct Instructions: Sendable, Copyable, SendableMetatype, InstructionsRepresentable {
+public struct Instructions: Sendable, InstructionsRepresentable {
 
     @_spi(Internal)
     public struct Text: Sendable, Equatable {

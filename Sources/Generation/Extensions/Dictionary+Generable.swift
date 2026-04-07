@@ -16,6 +16,9 @@ extension Dictionary: Generable where Key == String, Value: Generable {
 
 // MARK: - Dictionary ConvertibleToGeneratedContent
 
+extension Dictionary: PromptRepresentable where Key == String, Value: ConvertibleToGeneratedContent {}
+extension Dictionary: InstructionsRepresentable where Key == String, Value: ConvertibleToGeneratedContent {}
+
 extension Dictionary: ConvertibleToGeneratedContent where Key == String, Value: ConvertibleToGeneratedContent {
     public var generatedContent: GeneratedContent {
         var properties: [String: GeneratedContent] = [:]

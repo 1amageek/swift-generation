@@ -36,6 +36,9 @@ extension Optional: ConvertibleFromGeneratedContent where Wrapped: ConvertibleFr
 
 // MARK: - ConvertibleToGeneratedContent
 
+extension Optional: PromptRepresentable where Wrapped: ConvertibleToGeneratedContent {}
+extension Optional: InstructionsRepresentable where Wrapped: ConvertibleToGeneratedContent {}
+
 extension Optional: ConvertibleToGeneratedContent where Wrapped: ConvertibleToGeneratedContent {
     public var generatedContent: GeneratedContent {
         switch self {

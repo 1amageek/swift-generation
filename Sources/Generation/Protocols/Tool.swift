@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol Tool<Arguments, Output>: Sendable, SendableMetatype {
+public protocol Tool<Arguments, Output>: Sendable {
     associatedtype Output: PromptRepresentable
 
     associatedtype Arguments: ConvertibleFromGeneratedContent
@@ -29,5 +29,47 @@ extension Tool {
 extension Tool where Self.Arguments: Generable {
     public var parameters: GenerationSchema {
         return Arguments.generationSchema
+    }
+}
+
+extension Tool where Self.Arguments == String {
+    @available(*, unavailable, message: "'Tool' that uses 'String' as 'Arguments' type is unsupported. Use '@Generable' struct instead.")
+    public var parameters: GenerationSchema {
+        fatalError()
+    }
+}
+
+extension Tool where Self.Arguments == Int {
+    @available(*, unavailable, message: "'Tool' that uses 'Int' as 'Arguments' type is unsupported. Use '@Generable' struct instead.")
+    public var parameters: GenerationSchema {
+        fatalError()
+    }
+}
+
+extension Tool where Self.Arguments == Double {
+    @available(*, unavailable, message: "'Tool' that uses 'Double' as 'Arguments' type is unsupported. Use '@Generable' struct instead.")
+    public var parameters: GenerationSchema {
+        fatalError()
+    }
+}
+
+extension Tool where Self.Arguments == Float {
+    @available(*, unavailable, message: "'Tool' that uses 'Float' as 'Arguments' type is unsupported. Use '@Generable' struct instead.")
+    public var parameters: GenerationSchema {
+        fatalError()
+    }
+}
+
+extension Tool where Self.Arguments == Decimal {
+    @available(*, unavailable, message: "'Tool' that uses 'Decimal' as 'Arguments' type is unsupported. Use '@Generable' struct instead.")
+    public var parameters: GenerationSchema {
+        fatalError()
+    }
+}
+
+extension Tool where Self.Arguments == Bool {
+    @available(*, unavailable, message: "'Tool' that uses 'Bool' as 'Arguments' type is unsupported. Use '@Generable' struct instead.")
+    public var parameters: GenerationSchema {
+        fatalError()
     }
 }

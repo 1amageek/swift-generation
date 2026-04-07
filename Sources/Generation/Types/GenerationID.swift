@@ -1,6 +1,6 @@
 import Foundation
 
-public struct GenerationID: Equatable, Hashable, Sendable, SendableMetatype {
+public struct GenerationID: Sendable, Hashable {
     private let value: UUID
     
     public init() {

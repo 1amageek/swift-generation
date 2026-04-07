@@ -3,8 +3,8 @@ import Foundation
 
 
 
-public struct GeneratedContent: Sendable, Copyable, SendableMetatype, Equatable, CustomDebugStringConvertible, ConvertibleToGeneratedContent {
-    public enum Kind: Sendable, SendableMetatype, Equatable {
+public struct GeneratedContent: Sendable, Equatable, CustomDebugStringConvertible, ConvertibleToGeneratedContent {
+    public enum Kind: Sendable, Equatable {
         case null
         case bool(Bool)
         case number(Double)
