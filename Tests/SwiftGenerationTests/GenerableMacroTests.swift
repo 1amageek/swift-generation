@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import Generation
+@testable import SwiftGeneration
 
 @Generable
 struct SimpleValue {

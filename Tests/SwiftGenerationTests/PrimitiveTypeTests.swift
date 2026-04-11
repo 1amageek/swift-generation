@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import Generation
+@testable import SwiftGeneration
 
 @Suite("Primitive Type Generable Conformances")
 struct PrimitiveTypeTests {

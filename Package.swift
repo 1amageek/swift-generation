@@ -13,15 +13,15 @@ let package = Package(
     ],
     products: [
         .library(
-            name: "Generation",
-            targets: ["Generation"]),
+            name: "SwiftGeneration",
+            targets: ["SwiftGeneration"]),
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "602.0.0"),
     ],
     targets: [
         .target(
-            name: "Generation",
+            name: "SwiftGeneration",
             dependencies: [
                 "GenerationMacrosImpl",
             ]
@@ -36,8 +36,8 @@ let package = Package(
         ),
 
         .testTarget(
-            name: "GenerationTests",
-            dependencies: ["Generation"]
+            name: "SwiftGenerationTests",
+            dependencies: ["SwiftGeneration"]
         ),
     ]
 )

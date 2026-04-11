@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@_spi(Internal) @testable import Generation
+@_spi(Internal) @testable import SwiftGeneration
 
 // MARK: - Test types for schema verification
 
