@@ -7,7 +7,7 @@ Structured output generation for Swift. Define types that language models can ge
 `swift-generation` provides the core protocols, types, and macros for structured generation from language models. Use `@Generable` to make your Swift types generatable with schema constraints enforced at compile time.
 
 ```swift
-import Generation
+import SwiftGeneration
 
 @Generable(description: "A movie review")
 struct MovieReview {
@@ -40,7 +40,7 @@ Add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/1amageek/swift-generation.git", from: "0.1.0")
+    .package(url: "https://github.com/1amageek/swift-generation.git", from: "0.5.0")
 ]
 ```
 
@@ -50,7 +50,7 @@ Then add the targets to your module:
 .target(
     name: "YourTarget",
     dependencies: [
-        .product(name: "Generation", package: "swift-generation"),
+        .product(name: "SwiftGeneration", package: "swift-generation"),
     ]
 )
 ```
